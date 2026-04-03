@@ -9,7 +9,7 @@ description: 'Use when any computational work needs to be run — experiments, t
 
 Delegate heavy computational experiments to a short-lived Hetzner `cx53` server. The **local agent controls the server over SSH** — it issues commands, monitors output, and transfers files. No remote agent is spawned. The server is provisioned from a snapshot when one exists (saves setup time), otherwise from a base image. After the experiment completes, a new snapshot is created and the server is deleted.
 
-**Core principle:** Every session ends with: snapshot → delete. Never delete without snapshotting first. Never leave a server running.
+**Core principle:** Always check for idle running servers before spawning a new one. Every session ends with: snapshot → delete. Never delete without snapshotting first.
 
 ## When Dispatching Subagents
 
@@ -36,7 +36,36 @@ hcloud ssh-key list
 
 ## Full Lifecycle Pattern
 
-### 1. Find or Use Snapshot
+### 1. Check for Idle Running Servers (FIRST — before provisioning)
+
+```bash
+SSH_OPTS="-o StrictHostKeyChecking=no -o ConnectTimeout=5"
+
+# List all running servers
+RUNNING=$(hcloud server list -o json | jq -r '.[] | select(.status=="running") | "\(.name) \(.public_net.ipv4.ip)"')
+
+SERVER=""
+IP=""
+
+while IFS=' ' read -r name ip; do
+  [ -z "$name" ] && continue
+  # Check 1-min load average vs CPU count — idle if load < 50% of CPUs
+  LOAD=$(ssh $SSH_OPTS root@"$ip" "cat /proc/loadavg" 2>/dev/null | awk '{print int($1)}')
+  CPUS=$(ssh $SSH_OPTS root@"$ip" "nproc" 2>/dev/null)
+  if [ -n "$LOAD" ] && [ -n "$CPUS" ] && [ "$LOAD" -lt $(( CPUS / 2 )) ]; then
+    echo "Reusing idle server: $name ($ip) — load $LOAD / $CPUS CPUs"
+    SERVER="$name"
+    IP="$ip"
+    break
+  else
+    echo "Server $name is busy (load $LOAD / $CPUS CPUs), skipping."
+  fi
+done <<< "$RUNNING"
+```
+
+If `SERVER` and `IP` are set after this block, skip steps 2–3 and go straight to step 4.
+
+### 2. Find or Use Snapshot (only if no idle server found)
 
 ```bash
 # List available snapshots
@@ -136,12 +165,13 @@ Run `hcloud server-type list` for current pricing and availability.
 #!/usr/bin/env bash
 set -euo pipefail
 
-SERVER="worker-$(date +%s)"
 SSH_KEY="${HETZNER_SSH_KEY:?set HETZNER_SSH_KEY}"
 SSH_OPTS="-o StrictHostKeyChecking=no -o ConnectTimeout=15"
 SNAP_DESC="worker-snapshot-$(date +%Y%m%d-%H%M)"
+SERVER=""
+IP=""
+SPAWNED=false
 
-# Snapshot BEFORE any cleanup — never delete without snapshotting
 snapshot_and_delete() {
   echo "Creating snapshot '$SNAP_DESC'..."
   hcloud server create-image "$SERVER" --type snapshot --description "$SNAP_DESC" --wait \
@@ -151,31 +181,45 @@ snapshot_and_delete() {
 }
 trap snapshot_and_delete EXIT INT TERM
 
-# 1. Find latest snapshot or fall back to base image
-SNAPSHOT_ID=$(hcloud image list --type snapshot -o json | \
-  jq -r 'sort_by(.created) | reverse | .[0].id // empty')
-IMAGE=${SNAPSHOT_ID:-ubuntu-24.04}
-echo "Using image: $IMAGE"
+# 1. Check for idle running servers
+echo "Checking for idle running servers..."
+while IFS=' ' read -r name ip; do
+  [ -z "$name" ] && continue
+  LOAD=$(ssh $SSH_OPTS root@"$ip" "cat /proc/loadavg" 2>/dev/null | awk '{print int($1)}') || continue
+  CPUS=$(ssh $SSH_OPTS root@"$ip" "nproc" 2>/dev/null) || continue
+  if [ "$LOAD" -lt $(( CPUS / 2 )) ]; then
+    echo "Reusing idle server: $name ($ip) — load $LOAD/$CPUS"
+    SERVER="$name"; IP="$ip"
+    break
+  else
+    echo "Server $name busy (load $LOAD/$CPUS), skipping."
+  fi
+done < <(hcloud server list -o json | jq -r '.[] | select(.status=="running") | "\(.name) \(.public_net.ipv4.ip)"')
 
-# 2. Provision
-echo "Provisioning $SERVER (cx53)..."
-hcloud server create --name "$SERVER" --type cx53 --image "$IMAGE" \
-  --ssh-key "$SSH_KEY" --location nbg1 --wait
+# 2. Provision if no idle server found
+if [ -z "$SERVER" ]; then
+  SERVER="worker-$(date +%s)"
+  SPAWNED=true
+  SNAPSHOT_ID=$(hcloud image list --type snapshot -o json | \
+    jq -r 'sort_by(.created) | reverse | .[0].id // empty')
+  IMAGE=${SNAPSHOT_ID:-ubuntu-24.04}
+  echo "No idle server found. Provisioning $SERVER from $IMAGE..."
+  hcloud server create --name "$SERVER" --type cx53 --image "$IMAGE" \
+    --ssh-key "$SSH_KEY" --location nbg1 --wait
+  IP=$(hcloud server ip "$SERVER")
+  echo "Server at $IP, waiting for SSH..."
+  until ssh $SSH_OPTS root@"$IP" true 2>/dev/null; do sleep 2; done
+fi
 
-# 3. Wait for SSH
-IP=$(hcloud server ip "$SERVER")
-echo "Server at $IP, waiting for SSH..."
-until ssh $SSH_OPTS root@"$IP" true 2>/dev/null; do sleep 2; done
-
-# 4. Transfer experiment
+# 3. Transfer experiment
 echo "Transferring experiment..."
 rsync -az --delete -e "ssh $SSH_OPTS" ./experiment/ root@"$IP":/root/experiment/
 
-# 5. Run experiment
+# 4. Run experiment
 echo "Running experiment..."
 ssh $SSH_OPTS root@"$IP" "cd /root/experiment && bash run.sh"
 
-# 6. Collect results
+# 5. Collect results
 echo "Collecting results..."
 rsync -az -e "ssh $SSH_OPTS" root@"$IP":/root/experiment/output/ ./results/
 
@@ -188,6 +232,7 @@ echo "Done. Snapshot and cleanup will run on exit."
 
 | Mistake | Fix |
 |---------|-----|
+| Spawning new server when idle one exists | Always check running servers first (step 1) |
 | Deleting server without snapshot | Always snapshot first; trap guards this |
 | SSH before server is ready | Use the SSH poll loop after `--wait` |
 | Host key prompt blocks first SSH | `-o StrictHostKeyChecking=no` everywhere |
