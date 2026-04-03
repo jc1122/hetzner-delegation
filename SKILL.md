@@ -1,6 +1,6 @@
 ---
 name: hetzner-delegation
-description: Use when heavy computational work needs to be delegated to a remote Hetzner server. Triggers on: "run this on Hetzner", "delegate experiment", "offload heavy compute", "run on a VPS", "run Claude on remote server". Covers snapshot-aware provisioning, experiment execution, result retrieval, snapshot creation, and server deletion.
+description: 'Use when any computational work needs to be run — experiments, training, benchmarks, data processing, or scripts. Triggers on: "run experiment", "run this", "train", "compute", "benchmark", "offload", "delegate to Hetzner", "run on a server". If dispatching a subagent to do computational work, instruct it explicitly to use the hetzner-delegation skill and the Hetzner server worker.'
 ---
 
 # hetzner-delegation
@@ -10,6 +10,14 @@ description: Use when heavy computational work needs to be delegated to a remote
 Delegate heavy computational experiments to a short-lived Hetzner `cx53` server. The **local agent controls the server over SSH** — it issues commands, monitors output, and transfers files. No remote agent is spawned. The server is provisioned from a snapshot when one exists (saves setup time), otherwise from a base image. After the experiment completes, a new snapshot is created and the server is deleted.
 
 **Core principle:** Every session ends with: snapshot → delete. Never delete without snapshotting first. Never leave a server running.
+
+## When Dispatching Subagents
+
+If you delegate computational work to a subagent via the Agent tool, you MUST include this instruction in the subagent prompt:
+
+> "Use the hetzner-delegation skill. Run this work on the Hetzner server worker — do not execute it locally."
+
+Without this, the subagent will run the work locally by default. The instruction must be explicit.
 
 ## Prerequisites
 
