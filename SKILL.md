@@ -1,6 +1,6 @@
 ---
 name: hetzner-delegation
-description: 'Use when work should be offloaded to the ray-hetzner environment — experiments, training, benchmarks, data processing, queue batches, or remote project runs. Triggers on: "delegate this", "run this on ray", "run this on ray-hetzner", "enqueue this batch", "submit this campaign", "offload this workload". If dispatching a subagent, instruct it explicitly to use the hetzner-delegation skill and not execute the workload locally.'
+description: 'Use when computational work should run remotely — "run this experiment", "train this model", "compute", "benchmark", "run this on ray", "delegate this", "offload this workload", "enqueue this batch", "submit this campaign". Covers experiments, training, benchmarks, data processing, queue batches, and remote project runs via the ray-hetzner environment. If dispatching a subagent, instruct it explicitly to use the hetzner-delegation skill and not execute the workload locally.'
 ---
 
 # hetzner-delegation
@@ -20,6 +20,6 @@ Queue mode should only be chosen when the request clearly matches a batch-manife
 
 ## When Dispatching Subagents
 
-If you delegate compute work to a subagent, include:
+If you delegate compute work to a subagent, you MUST include an explicit instruction to use this skill. Without this, the subagent will run the work locally by default.
 
 > "Use the hetzner-delegation skill. Delegate this work through ray-hetzner and do not execute it locally."
