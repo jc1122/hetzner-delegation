@@ -125,10 +125,10 @@ Queue mode requires a running head node. If `status.sh` does not show `ray-head`
 
 ```bash
 cd ~/projects/ray-hetzner
-python3 metaopt/enqueue_batch.py --manifest /path/to/batch.json
+python3 metaopt/enqueue_batch.py /path/to/batch.json
 ```
 
-The manifest is submitted as an immutable code artifact. Do not silently pack large datasets into it; treat dataset movement as an explicit decision.
+The batch manifest is an immutable JSON document. Required fields: `version`, `campaign_id`, `iteration`, `batch_id`, `experiment`, `retry_policy.max_attempts`, `artifacts.code_artifact.uri`, `artifacts.data_manifest.uri`, `execution.entrypoint`. Do not silently pack large datasets into the code artifact; treat dataset movement as an explicit decision.
 
 ### 2. Run the reconciler
 
@@ -143,14 +143,14 @@ python3 metaopt/head_daemon.py --once
 
 ```bash
 cd ~/projects/ray-hetzner
-python3 metaopt/get_batch_status.py --batch-id batch-001   # replace with the batch ID from enqueue output
+python3 metaopt/get_batch_status.py batch-001   # replace with the batch ID from enqueue output
 ```
 
 ### 4. Fetch results
 
 ```bash
 cd ~/projects/ray-hetzner
-python3 metaopt/fetch_batch_results.py --batch-id batch-001   # replace with the batch ID from enqueue output
+python3 metaopt/fetch_batch_results.py batch-001   # replace with the batch ID from enqueue output
 ```
 
 In the default remote mode, status and results are persisted on the head. Use the batch ID to retrieve them at any time after submission.
