@@ -25,3 +25,74 @@ Queue mode should only be chosen when the request clearly matches a batch-manife
 If you delegate compute work to a subagent, you MUST include an explicit instruction to use this skill. Without this, the subagent will run the work locally by default.
 
 > "Use the hetzner-delegation skill. Delegate this work through ray-hetzner and do not execute it locally."
+
+## Prerequisites
+
+```bash
+cd ~/projects/ray-hetzner
+cp config.env.example config.env
+```
+
+Required environment:
+
+- authenticated `hcloud` CLI context
+- local `jq`, `rsync`, and `ssh`
+- a populated `~/projects/ray-hetzner/config.env`
+- optional local `ray[default]` install for connectivity/smoke checks
+
+## Direct Delegation Workflow
+
+### 1. Check cluster status first
+
+```bash
+cd ~/projects/ray-hetzner
+./status.sh
+```
+
+### 2. Reuse or bootstrap the cluster
+
+```bash
+cd ~/projects/ray-hetzner
+./build_base_snapshot.sh      # only when the base snapshot is still missing
+./setup_head.sh
+./add_worker.sh 1             # add more workers only when the workload needs them
+```
+
+### 3. Sync code explicitly
+
+```bash
+cd ~/projects/ray-hetzner
+./push_code.sh --no-data ~/projects/MyProject
+```
+
+Use `--no-data` by default. Only sync large data explicitly when the user asks for it.
+
+### 4. Run the workload
+
+```bash
+ssh root@"$RAY_HEAD_IP"
+tmux new -s run
+python /root/MyProject/path/to/script.py
+```
+
+### 5. Collect logs and optional results
+
+```bash
+cd ~/projects/ray-hetzner
+./collect_logs.sh --results /root/MyProject/results
+```
+
+### 6. Cleanup only when requested
+
+```bash
+cd ~/projects/ray-hetzner
+./remove_worker.sh ray-worker-1
+./teardown_head.sh
+```
+
+## Sync Policy
+
+- **Code sync:** automatic and expected before direct delegation
+- **Data sync:** explicit only; do not guess that local `data/` directories belong on the cluster
+- **Remote targets:** always use dedicated synced directories because `push_code.sh` uses `rsync --delete`
+- **Results:** collect logs by default; collect full result trees when the user requests them
