@@ -56,7 +56,7 @@ If `status.sh` already shows `ray-head` and the needed `ray-worker-*` servers, r
 
 ```bash
 cd ~/projects/ray-hetzner
-./build_base_snapshot.sh      # only when `hcloud image list -t snapshot -l type=ray-worker-base` is empty
+./build_base_snapshot.sh      # only when no `ray-worker-base-*` snapshot exists yet
 ./setup_head.sh
 ./add_worker.sh 1             # add more workers only when the workload needs them
 ```
