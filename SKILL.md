@@ -137,7 +137,7 @@ cd ~/projects/ray-hetzner
 python3 metaopt/head_daemon.py --once
 ```
 
-`--once` processes the current inbox and exits. Use the long-running mode only when the user explicitly needs a polling daemon.
+`--once` runs a single reconciliation pass, recovering stale batches and processing one inbox item before it exits. Use the long-running mode only when the user explicitly needs a polling daemon.
 
 ### 3. Poll status
 
