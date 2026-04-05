@@ -114,3 +114,51 @@ cd ~/projects/ray-hetzner
 - **Data sync:** explicit only; do not guess that local `data/` directories belong on the cluster
 - **Remote targets:** always use dedicated synced directories because `push_code.sh` uses `rsync --delete`
 - **Results:** collect logs by default; collect full result trees when the user requests them
+
+## Queue Delegation Workflow
+
+Use this path when the request already fits the `metaopt` batch contract or the user explicitly asks for queue-backed campaign execution. Otherwise use direct delegation.
+
+### 1. Enqueue the batch
+
+```bash
+cd ~/projects/ray-hetzner
+python3 metaopt/enqueue_batch.py --manifest /path/to/batch.json
+```
+
+The manifest is submitted as an immutable code artifact. Do not silently pack large datasets into it; treat dataset movement as an explicit decision.
+
+### 2. Run or reuse the daemon
+
+```bash
+cd ~/projects/ray-hetzner
+python3 metaopt/head_daemon.py --once
+```
+
+### 3. Poll status
+
+```bash
+cd ~/projects/ray-hetzner
+python3 metaopt/get_batch_status.py --batch-id batch-001
+```
+
+### 4. Fetch results
+
+```bash
+cd ~/projects/ray-hetzner
+python3 metaopt/fetch_batch_results.py --batch-id batch-001
+```
+
+Status and results are persisted on the head. Use the batch ID to retrieve them at any time after submission.
+
+## Safety Rules
+
+- Reuse the head by default.
+- Do not perform destructive cleanup unless the user clearly asks for it.
+- Do not silently sync large datasets.
+- Make the chosen mode explicit: direct vs queue, reuse vs bootstrap, sync scope, cleanup scope.
+- Use `ray-hetzner`'s documented scripts and queue commands instead of raw Hetzner fallbacks.
+
+## Failure Handling
+
+If prerequisites are missing for real execution, fail clearly and point to the blocked `ray-hetzner` step instead of inventing a fallback. Use dry-run/rehearsal behavior only when the user is planning or inspecting.
