@@ -119,6 +119,8 @@ cd ~/projects/ray-hetzner
 
 Use this path when the request already fits the `metaopt` batch contract or the user explicitly asks for queue-backed campaign execution. Otherwise use direct delegation.
 
+Queue mode requires a running head node. If `status.sh` does not show `ray-head`, complete direct delegation steps 1-3 first.
+
 ### 1. Enqueue the batch
 
 ```bash
@@ -128,28 +130,30 @@ python3 metaopt/enqueue_batch.py --manifest /path/to/batch.json
 
 The manifest is submitted as an immutable code artifact. Do not silently pack large datasets into it; treat dataset movement as an explicit decision.
 
-### 2. Run or reuse the daemon
+### 2. Run the reconciler
 
 ```bash
 cd ~/projects/ray-hetzner
 python3 metaopt/head_daemon.py --once
 ```
 
+`--once` processes the current inbox and exits. Use the long-running mode only when the user explicitly needs a polling daemon.
+
 ### 3. Poll status
 
 ```bash
 cd ~/projects/ray-hetzner
-python3 metaopt/get_batch_status.py --batch-id batch-001
+python3 metaopt/get_batch_status.py --batch-id batch-001   # replace with the batch ID from enqueue output
 ```
 
 ### 4. Fetch results
 
 ```bash
 cd ~/projects/ray-hetzner
-python3 metaopt/fetch_batch_results.py --batch-id batch-001
+python3 metaopt/fetch_batch_results.py --batch-id batch-001   # replace with the batch ID from enqueue output
 ```
 
-Status and results are persisted on the head. Use the batch ID to retrieve them at any time after submission.
+In the default remote mode, status and results are persisted on the head. Use the batch ID to retrieve them at any time after submission.
 
 ## Safety Rules
 
@@ -161,4 +165,4 @@ Status and results are persisted on the head. Use the batch ID to retrieve them 
 
 ## Failure Handling
 
-If prerequisites are missing for real execution, fail clearly and point to the blocked `ray-hetzner` step instead of inventing a fallback. Use dry-run/rehearsal behavior only when the user is planning or inspecting.
+If prerequisites are missing for real execution, fail clearly and point to the blocked `ray-hetzner` step instead of inventing a fallback. Use dry-run/rehearsal behavior only when the user is planning or inspecting (`--dry-run`, `--allow-missing-prereqs`).
