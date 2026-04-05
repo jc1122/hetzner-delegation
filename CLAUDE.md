@@ -14,4 +14,10 @@ Sync the live skill back into this repository after editing:
 
 ```bash
 cp ~/.claude/skills/hetzner-delegation/SKILL.md ~/projects/hetzner-delegation/SKILL.md
+cd ~/projects/hetzner-delegation
+git add SKILL.md
+git commit -m "sync SKILL.md"
+git push
 ```
+
+See `docs/superpowers/specs/` for the approved rewrite design.

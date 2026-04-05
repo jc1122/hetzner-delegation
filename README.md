@@ -9,4 +9,6 @@ Primary paths:
 - direct Ray-cluster delegation for arbitrary project runs
 - queue-backed delegation for `metaopt` batch workflows
 
-Design and planning docs live under `docs/superpowers/`.
+The skill definition is in [SKILL.md](SKILL.md).
+
+Design specs live under `docs/superpowers/specs/`.
