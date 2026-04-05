@@ -50,13 +50,13 @@ cd ~/projects/ray-hetzner
 ./status.sh
 ```
 
-If the head and workers are already running, reuse the existing cluster and skip to step 3.
+If `status.sh` already shows `ray-head` and the needed `ray-worker-*` servers, reuse the existing cluster and skip to step 3.
 
 ### 2. Bootstrap the cluster (only when needed)
 
 ```bash
 cd ~/projects/ray-hetzner
-./build_base_snapshot.sh      # only when the base snapshot is still missing
+./build_base_snapshot.sh      # only when `hcloud image list -t snapshot -l type=ray-worker-base` is empty
 ./setup_head.sh
 ./add_worker.sh 1             # add more workers only when the workload needs them
 ```
@@ -65,7 +65,6 @@ cd ~/projects/ray-hetzner
 
 ```bash
 cd ~/projects/ray-hetzner
-source config.env
 python3 connect_test.py        # verifies SSH and Ray connectivity
 python3 smoke_test.py          # runs a minimal remote task
 ```
@@ -85,6 +84,11 @@ Use `--no-data` by default. Only sync large data explicitly when the user asks f
 cd ~/projects/ray-hetzner
 source config.env
 ssh root@"$RAY_HEAD_IP"
+```
+
+Then on the head node:
+
+```bash
 tmux new -s run
 python /root/MyProject/path/to/script.py
 ```
