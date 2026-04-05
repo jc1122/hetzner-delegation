@@ -9,6 +9,8 @@ description: 'Use when computational work should run remotely — "run this expe
 
 Delegate computational work through the `ray-hetzner` repository. This skill is delegation-first: it may reuse or bootstrap the cluster, sync code, run work directly on the Ray cluster, or submit queue-backed `metaopt` batches when the request fits that workflow.
 
+All cluster scripts and queue commands live in the `ray-hetzner` repository (`~/projects/ray-hetzner`). Start from its `README.md` and `docs/` for command discovery.
+
 The skill is not a generic Hetzner administration manual. It should only perform the cluster lifecycle steps needed to make delegation succeed.
 
 ## Execution Paths
