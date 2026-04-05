@@ -31,6 +31,7 @@ If you delegate compute work to a subagent, you MUST include an explicit instruc
 ```bash
 cd ~/projects/ray-hetzner
 cp config.env.example config.env
+# Edit config.env to set your Hetzner token, SSH key, and other site-specific values
 ```
 
 Required environment:
@@ -49,7 +50,9 @@ cd ~/projects/ray-hetzner
 ./status.sh
 ```
 
-### 2. Reuse or bootstrap the cluster
+If the head and workers are already running, reuse the existing cluster and skip to step 3.
+
+### 2. Bootstrap the cluster (only when needed)
 
 ```bash
 cd ~/projects/ray-hetzner
@@ -58,7 +61,16 @@ cd ~/projects/ray-hetzner
 ./add_worker.sh 1             # add more workers only when the workload needs them
 ```
 
-### 3. Sync code explicitly
+### 3. Validate the cluster
+
+```bash
+cd ~/projects/ray-hetzner
+source config.env
+python3 connect_test.py        # verifies SSH and Ray connectivity
+python3 smoke_test.py          # runs a minimal remote task
+```
+
+### 4. Sync code explicitly
 
 ```bash
 cd ~/projects/ray-hetzner
@@ -67,22 +79,24 @@ cd ~/projects/ray-hetzner
 
 Use `--no-data` by default. Only sync large data explicitly when the user asks for it.
 
-### 4. Run the workload
+### 5. Run the workload
 
 ```bash
+cd ~/projects/ray-hetzner
+source config.env
 ssh root@"$RAY_HEAD_IP"
 tmux new -s run
 python /root/MyProject/path/to/script.py
 ```
 
-### 5. Collect logs and optional results
+### 6. Collect logs and optional results
 
 ```bash
 cd ~/projects/ray-hetzner
 ./collect_logs.sh --results /root/MyProject/results
 ```
 
-### 6. Cleanup only when requested
+### 7. Cleanup only when requested
 
 ```bash
 cd ~/projects/ray-hetzner
