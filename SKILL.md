@@ -5,6 +5,8 @@ description: 'Use when computational work should run remotely — "run this expe
 
 # hetzner-delegation
 
+> **Note:** This skill is implemented in the `ray-hetzner` repository (`~/projects/ray-hetzner`), which this skill directory mirrors. All scripts (`setup_head.sh`, `add_worker.sh`, etc.) and the queue backend (`metaopt/`) live there.
+
 ## Overview
 
 Delegate computational work through the `ray-hetzner` repository. This skill is delegation-first: it may reuse or bootstrap the cluster, sync code, run work directly on the Ray cluster, or submit queue-backed `metaopt` batches when the request fits that workflow.
@@ -142,6 +144,8 @@ python3 metaopt/enqueue_batch.py --manifest /path/to/batch.json
 ```
 
 The batch manifest is an immutable JSON document. Required fields: `version`, `campaign_id`, `iteration`, `batch_id`, `experiment`, `retry_policy.max_attempts`, `artifacts.code_artifact.uri`, `artifacts.data_manifest.uri`, `execution.entrypoint`. Do not silently pack large datasets into the code artifact; treat dataset movement as an explicit decision.
+
+> Batch manifest schema is defined in `ml-metaoptimization/references/contracts.md` (Batch Manifest Contract section).
 
 ### 2. Run the reconciler
 
