@@ -31,7 +31,7 @@ If you delegate compute work to a subagent, you MUST include an explicit instruc
 ```bash
 cd ~/projects/ray-hetzner
 cp config.env.example config.env
-# Edit config.env to set your Hetzner token, SSH key, and other site-specific values
+# Edit config.env to set your Hetzner SSH key name and other site-specific values
 ```
 
 Required environment:
@@ -40,6 +40,8 @@ Required environment:
 - local `jq`, `rsync`, and `ssh`
 - a populated `~/projects/ray-hetzner/config.env`
 - optional local `ray[default]` install for connectivity/smoke checks
+
+`setup_head.sh` runs preflight checks automatically (SSH key, snapshot, network, quota) and will fail clearly if any prerequisite is missing.
 
 ## Direct Delegation Workflow
 
@@ -57,16 +59,27 @@ If `status.sh` already shows `ray-head` and the needed `ray-worker-*` servers, r
 ```bash
 cd ~/projects/ray-hetzner
 ./build_base_snapshot.sh      # only when no `ray-worker-base-*` snapshot exists yet
-./setup_head.sh
-./add_worker.sh 1             # add more workers only when the workload needs them
+./setup_head.sh               # creates head, installs ray, starts ray --head
+./add_worker.sh 1             # adds one worker by default; add more when the workload needs them
 ```
+
+`setup_head.sh` and `add_worker.sh` are idempotent — safe to rerun if an earlier run was interrupted.
+They automatically clear stale SSH known_hosts entries when a server is reprovisioned at a reused IP.
 
 ### 3. Validate the cluster
 
 ```bash
 cd ~/projects/ray-hetzner
-python3 connect_test.py        # verifies SSH and Ray connectivity
-python3 smoke_test.py          # runs a minimal remote task
+# Run on the head node — Ray ports are firewall-blocked on the public interface by design
+ssh root@"$RAY_HEAD_IP" "/opt/ray-env/bin/python3 /root/ray-hetzner/connect_test.py"
+ssh root@"$RAY_HEAD_IP" "/opt/ray-env/bin/python3 /root/ray-hetzner/smoke_test.py"
+```
+
+To run from the laptop instead, open an SSH tunnel first:
+
+```bash
+ssh -L 10001:<RAY_HEAD_PRIVATE_IP>:10001 root@"$RAY_HEAD_IP" -N &
+RAY_ADDRESS=ray://localhost:10001 python3 connect_test.py
 ```
 
 ### 4. Sync code explicitly
@@ -125,7 +138,7 @@ Queue mode requires a running head node. If `status.sh` does not show `ray-head`
 
 ```bash
 cd ~/projects/ray-hetzner
-python3 metaopt/enqueue_batch.py /path/to/batch.json
+python3 metaopt/enqueue_batch.py --manifest /path/to/batch.json
 ```
 
 The batch manifest is an immutable JSON document. Required fields: `version`, `campaign_id`, `iteration`, `batch_id`, `experiment`, `retry_policy.max_attempts`, `artifacts.code_artifact.uri`, `artifacts.data_manifest.uri`, `execution.entrypoint`. Do not silently pack large datasets into the code artifact; treat dataset movement as an explicit decision.
@@ -143,14 +156,14 @@ python3 metaopt/head_daemon.py --once
 
 ```bash
 cd ~/projects/ray-hetzner
-python3 metaopt/get_batch_status.py batch-001   # replace with the batch ID from enqueue output
+python3 metaopt/get_batch_status.py --batch-id batch-001   # replace with the batch ID from enqueue output
 ```
 
 ### 4. Fetch results
 
 ```bash
 cd ~/projects/ray-hetzner
-python3 metaopt/fetch_batch_results.py batch-001   # replace with the batch ID from enqueue output
+python3 metaopt/fetch_batch_results.py --batch-id batch-001   # replace with the batch ID from enqueue output
 ```
 
 In the default remote mode, status and results are persisted on the head. Use the batch ID to retrieve them at any time after submission.
