@@ -4,20 +4,19 @@ This repository mirrors the `hetzner-delegation` skill for version control.
 
 Current direction:
 
-- the old single-server Hetzner flow is obsolete
-- the skill is rewritten around `~/projects/ray-hetzner`
-- default behavior is delegation-first direct cluster execution
-- queue mode is reserved for `metaopt`-shaped work
-- automatic code sync is acceptable; large data sync must stay explicit
+- this repository is the versioned source for the agent-facing skill
+- `~/projects/ray-hetzner` is the execution backend and runtime source of truth
+- Aorus is the permanent Ray head and queue control plane
+- queue mode is the primary execution path
+- direct mode uses `submit_ray_job.sh` for one-off Ray jobs
+- the old manual Hetzner head and worker lifecycle is removed
+- large data movement must stay explicit
 
-Sync the live skill back into this repository after editing:
+If another runtime still uses a copied live skill, sync this repository's `SKILL.md` out after editing:
 
 ```bash
-cp ~/.claude/skills/hetzner-delegation/SKILL.md ~/projects/hetzner-delegation/SKILL.md
 cd ~/projects/hetzner-delegation
-git add SKILL.md
-git commit -m "sync SKILL.md"
-git push
+cp SKILL.md ~/.claude/skills/hetzner-delegation/SKILL.md
 ```
 
-See `docs/superpowers/specs/` for the approved rewrite design.
+See `docs/superpowers/specs/` for historical design notes.
