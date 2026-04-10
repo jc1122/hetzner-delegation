@@ -93,6 +93,15 @@ Supported scaling path:
 - workers boot from the latest `ray-worker-base-*` snapshot
 - workers join over Tailscale
 
+Before the first autoscaled worker job, a base snapshot must exist:
+
+```bash
+cd ~/projects/ray-hetzner
+./build_base_snapshot.sh
+```
+
+Re-run `build_base_snapshot.sh` only when worker dependencies change. The snapshot is reused across runs.
+
 Do not use the removed manual head or worker lifecycle as a fallback.
 
 ## Queue Delegation Workflow
@@ -157,7 +166,7 @@ ssh "$AORUS_SSH_USER@$AORUS_TAILSCALE_IP" \
    --once"
 ```
 
-Continuous multi-project mode is managed by the Aorus user service installed by `setup_aorus.sh`. Configure watched roots with `METAOPT_QUEUE_ROOTS` in `config.env`.
+Continuous multi-project mode is managed by the Aorus user service installed by `setup_aorus.sh`. Configure watched roots with `METAOPT_QUEUE_ROOTS` in `config.env` (colon-separated). Re-run `setup_aorus.sh` after changing `METAOPT_QUEUE_ROOTS` to push the updated list to Aorus — the daemon will not pick up the new root until then.
 
 ### 4. Poll status
 
