@@ -120,14 +120,30 @@ Do not rely on `METAOPT_REMOTE_QUEUE_ROOT` as a durable multi-project default.
 
 ### 1. Bootstrap or inspect the control plane
 
+Default run (daemon only — safe while jobs are running):
+
 ```bash
 cd ~/projects/ray-hetzner
-./setup_aorus.sh --dry-run
 ./setup_aorus.sh
 ./status.sh
 ```
 
-Skip the real bootstrap if `status.sh` already shows Aorus is healthy and the queue daemon state is adequate for the requested work.
+First-time setup, after a Ray crash, or when `cluster.yaml`/`metaopt/` code has changed:
+
+```bash
+cd ~/projects/ray-hetzner
+./setup_aorus.sh --restart-ray
+./status.sh
+```
+
+Rehearse without side effects:
+
+```bash
+./setup_aorus.sh --dry-run
+./setup_aorus.sh --dry-run --restart-ray
+```
+
+Skip entirely if `status.sh` already shows Aorus is healthy and the queue daemon state is adequate for the requested work.
 
 ### 1a. Register a new project queue root (first time only)
 
@@ -139,7 +155,7 @@ Check whether the project root is already in `METAOPT_QUEUE_ROOTS`:
 grep METAOPT_QUEUE_ROOTS ~/projects/ray-hetzner/config.env
 ```
 
-If it is missing, add it (colon-separated) and re-run `setup_aorus.sh` to push the change to Aorus and restart the daemon:
+If it is missing, add it (colon-separated) and re-run `setup_aorus.sh` to push the change and restart the daemon. No `--restart-ray` needed — running jobs are not affected:
 
 ```bash
 # Edit config.env to append the new root, e.g.:
@@ -189,7 +205,7 @@ ssh "$AORUS_SSH_USER@$AORUS_TAILSCALE_IP" \
    --once"
 ```
 
-Continuous multi-project mode is managed by the Aorus user service installed by `setup_aorus.sh`. Configure watched roots with `METAOPT_QUEUE_ROOTS` in `config.env` (colon-separated). Re-run `setup_aorus.sh` after changing `METAOPT_QUEUE_ROOTS` to push the updated list to Aorus **and restart the shared daemon** — the daemon will not pick up the new root until then. Do not launch per-project long-running daemons for normal operation; keep one shared watcher and isolate projects by queue root.
+Continuous multi-project mode is managed by the Aorus user service installed by `setup_aorus.sh`. Configure watched roots with `METAOPT_QUEUE_ROOTS` in `config.env` (colon-separated). Re-run `setup_aorus.sh` (no `--restart-ray`) after changing `METAOPT_QUEUE_ROOTS` — the daemon will not pick up the new root until then, but running jobs are not affected. Do not launch per-project long-running daemons for normal operation; keep one shared watcher and isolate projects by queue root.
 
 ### 4. Poll status
 
