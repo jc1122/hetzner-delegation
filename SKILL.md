@@ -84,6 +84,15 @@ cd ~/projects/ray-hetzner
 - Hetzner worker inventory
 - Hetzner network state when present
 
+## Aorus Runtime Environment
+
+Aorus runs a **custom ROCm PyTorch build** (`torch 2.9.1`, AMD Radeon RX 5700 XT) installed system-wide at `/usr/bin/python3`. The Ray venv (`AORUS_RAY_VENV`) contains Ray only — PyTorch is not in the venv.
+
+- **Do not install or update torch on Aorus.** The custom ROCm build will be overwritten.
+- GPU tasks must invoke `/usr/bin/python3` directly (e.g. via subprocess or as the entrypoint) — not the Ray venv Python.
+- BLAS: OpenBLAS 64-bit (`openblas64`). Do not install a separate BLAS.
+- Hetzner workers use a standard CPU-only Python env at `/opt/ray-env` (no GPU, no ROCm).
+
 ## Worker Capacity Model
 
 Hetzner workers are disposable capacity, not the control plane.
