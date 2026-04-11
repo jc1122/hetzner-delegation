@@ -60,7 +60,7 @@ Compatibility variables such as `RAY_HEAD_IP` may still exist, but new workflow 
 
 ## Canonical Bootstrap
 
-Refresh the permanent control plane before real execution when needed:
+Update daemon config and restart the daemon (default — does NOT touch the Ray head):
 
 ```bash
 cd ~/projects/ray-hetzner
@@ -68,14 +68,14 @@ cd ~/projects/ray-hetzner
 ./status.sh
 ```
 
-Rehearse the bootstrap without contacting Aorus or mutating `config.env`:
+Rehearse without contacting Aorus or mutating `config.env`:
 
 ```bash
 cd ~/projects/ray-hetzner
 ./setup_aorus.sh --dry-run
 ```
 
-`setup_aorus.sh` is the supported bootstrap entrypoint. It refreshes the Ray head on Aorus, installs or updates the queue daemon service, and keeps compatibility variables in sync.
+`setup_aorus.sh` is the supported bootstrap entrypoint. By default it updates the queue daemon service and config only — it does **not** restart the Ray head. Pass `--restart-ray` only for first-time setup, after a Ray crash, or when `cluster.yaml`/`metaopt/` code has changed. Never pass `--restart-ray` when jobs are running.
 
 `status.sh` is the supported state check. It should be used to confirm:
 
@@ -143,7 +143,7 @@ Rehearse without side effects:
 ./setup_aorus.sh --dry-run --restart-ray
 ```
 
-Skip entirely if `status.sh` already shows Aorus is healthy and the queue daemon state is adequate for the requested work.
+Skip entirely if `status.sh` already shows Ray is running and the daemon is active. Running `./setup_aorus.sh` (default) is always safe — it only restarts the daemon, never Ray. Only add `--restart-ray` when Ray itself needs to be restarted.
 
 ### 1a. Register a new project queue root (first time only)
 
@@ -255,10 +255,11 @@ Use this path for one-off runs that do not fit the queue contract.
 
 ```bash
 cd ~/projects/ray-hetzner
-./setup_aorus.sh --dry-run
 ./setup_aorus.sh
 ./status.sh
 ```
+
+Same rules as the queue workflow: default run is daemon-only and safe. Pass `--restart-ray` only when Ray itself needs restarting.
 
 ### 2. Sync code explicitly to a dedicated remote path
 
