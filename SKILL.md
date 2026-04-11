@@ -262,6 +262,8 @@ cd ~/projects/ray-hetzner
 
 ### 2. Sync code explicitly to a dedicated remote path
 
+> **Warning:** `--delete` removes files on the remote that don't exist locally. Only use with a dedicated remote path that nothing else writes to. Verify the destination before running.
+
 ```bash
 rsync -az --delete \
   --exclude='.git' \
