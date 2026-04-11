@@ -53,7 +53,8 @@ Primary config variables:
 - `TAILSCALE_AUTH_KEY`
 - `HETZNER_SSH_KEY`
 - `METAOPT_REMOTE_REPO_ROOT=/home/jakub/ray-hetzner`
-- `AORUS_OBJECT_STORE_MEMORY_GB` — cap the Ray plasma object store in GiB (e.g. `2`); leave unset to let Ray auto-allocate (~30% of RAM). Set this when the object store is unused and task memory is under pressure.
+- `AORUS_OBJECT_STORE_MEMORY_GB` — cap the Ray plasma object store on Aorus in GiB (e.g. `2`); leave unset to let Ray auto-allocate (~30% of RAM). Set this when the object store is unused and task memory is under pressure.
+- `WORKER_OBJECT_STORE_MEMORY_GB` — same cap for Hetzner worker nodes. Applied via the autoscaler bootstrap script. Can also be set per-cluster via `worker_object_store_memory_gb` in `cluster.yaml`.
 
 Compatibility variables such as `RAY_HEAD_IP` may still exist, but new workflow logic should treat `AORUS_TAILSCALE_IP` as canonical.
 
