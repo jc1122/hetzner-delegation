@@ -129,6 +129,27 @@ cd ~/projects/ray-hetzner
 
 Skip the real bootstrap if `status.sh` already shows Aorus is healthy and the queue daemon state is adequate for the requested work.
 
+### 1a. Register a new project queue root (first time only)
+
+If this project has never run through the queue before, its queue root must be registered with the shared daemon before enqueuing. The daemon silently ignores inboxes it is not watching.
+
+Check whether the project root is already in `METAOPT_QUEUE_ROOTS`:
+
+```bash
+grep METAOPT_QUEUE_ROOTS ~/projects/ray-hetzner/config.env
+```
+
+If it is missing, add it (colon-separated) and re-run `setup_aorus.sh` to push the change to Aorus and restart the daemon:
+
+```bash
+# Edit config.env to append the new root, e.g.:
+# METAOPT_QUEUE_ROOTS=/home/jakub/projects/existing/.ml-metaopt:/home/jakub/projects/<project>/.ml-metaopt
+cd ~/projects/ray-hetzner
+./setup_aorus.sh
+```
+
+Skip this step if the project root is already listed in `METAOPT_QUEUE_ROOTS`.
+
 ### 2. Enqueue the batch
 
 ```bash
