@@ -1,0 +1,15 @@
+# Catalog metadata for OpenAI/Codex-style runtimes.
+interface:
+  display_name: "Hetzner Delegation"
+  short_description: "Delegate computational work to the ray-hetzner cluster via the Aorus permanent Ray head and queue backend"
+  categories:
+    - ml
+    - infrastructure
+    - distributed
+  default_prompt: >
+    Use the hetzner-delegation skill to delegate work to the ray-hetzner cluster.
+    Follow the queue delegation workflow: bootstrap or inspect the control plane,
+    register the project queue root if new, enqueue the batch manifest, poll status,
+    and fetch results. Never use raw Ray CLI, SSH, or hcloud as fallbacks.
+    Never restart the Ray head unless explicitly required (--restart-ray flag).
+    Always pass an explicit --queue-root for every queue command.
